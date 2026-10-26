@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const studentRoutes = require('./routes/students.cjs');
+const authRoutes = require('./routes/auth.cjs');
 
 const app = express();
 
@@ -16,7 +17,8 @@ mongoose.connect(process.env.MONGO_URI)
         console.error('MongoDB connection error:', err);
     });
 
-app.use('/students', studentRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 

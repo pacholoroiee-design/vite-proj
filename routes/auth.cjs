@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -9,63 +8,88 @@ const router = express.Router();
 // REGISTER
 router.post('/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { name, email, password } = req.body;
 
-        // Check if email already exists
-        const existing = await User.findOne({ email });
-
-        if (existing) {
-            return res.status(409).json({
-                error: 'Email already registered'
+        // Check required fields
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                error: 'Name, email, and password are required.'
             });
         }
 
-        // Hash the password
+        // Check password length
+        if (password.length < 8) {
+            return res.status(400).json({
+                error: 'Password must be at least 8 characters long.'
+            });
+        }
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            return res.status(409).json({
+                error: 'Email already registered.'
+            });
+        }
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create the user
+        // Create user
         const user = await User.create({
+            name,
             email,
             password: hashedPassword
         });
 
-        // Return user information without password
-        res.status(201).json({
-            id: user._id,
-            email: user.email,
-            role: user.role
+        return res.status(201).json({
+            message: 'Registration successful.',
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
 
-    } catch (err) {
-        res.status(400).json({
-            error: err.message
+    } catch (error) {
+        console.error('Registration error:', error);
+
+        return res.status(500).json({
+            error: 'Registration failed.',
+            message: error.message
         });
     }
 });
+
 
 // LOGIN
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find the user
+        if (!email || !password) {
+            return res.status(400).json({
+                error: 'Email and password are required.'
+            });
+        }
+
+        // Find user
         const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(401).json({
-                error: 'Invalid credentials'
+                error: 'Invalid email or password.'
             });
         }
 
-        // Compare password with stored hash
-        const isMatch = await bcrypt.compare(
-            password,
-            user.password
-        );
+        // Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
             return res.status(401).json({
-                error: 'Invalid credentials'
+                error: 'Invalid email or password.'
             });
         }
 
@@ -81,12 +105,23 @@ router.post('/login', async (req, res) => {
             }
         );
 
-        // Return the token
-        res.json({ token });
+        return res.status(200).json({
+            message: 'Login successful.',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
 
-    } catch (err) {
-        res.status(500).json({
-            error: err.message
+    } catch (error) {
+        console.error('Login error:', error);
+
+        return res.status(500).json({
+            error: 'Login failed.',
+            message: error.message
         });
     }
 });

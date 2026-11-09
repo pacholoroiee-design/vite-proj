@@ -1,3 +1,4 @@
+
 const dns = require('node:dns');
 
 dns.setServers(['1.1.1.1', '8.8.8.8']);
@@ -10,6 +11,7 @@ const cors = require('cors');
 
 const studentRoutes = require('./routes/students.cjs');
 const authRoutes = require('./routes/auth.cjs');
+const uploadRoutes = require('./routes/upload.cjs');
 
 const app = express();
 
@@ -23,6 +25,7 @@ app.use(express.json());
 // API routes
 app.use('/api/students', studentRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRoutes);
 
 const PORT = process.env.PORT || 3000;
 

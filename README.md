@@ -36,4 +36,6 @@ When the JWT expires, protected requests will fail. The frontend should remove t
 4.	What is the difference between the backend's requireAuth middleware (from Lesson 5) and the frontend's ProtectedRoute component? Why do we need both?
 requireAuth protects backend API routes, while ProtectedRoute protects frontend pages. Both are needed to secure the application and its data.
 
+lab7 A short paragraph (3–4 sentences) answering: "Why do we use memoryStorage instead of diskStorage when uploading to Cloudinary?"
+We use memoryStorage instead of diskStorage when uploading to Cloudinary because it stores the uploaded file temporarily in the server's memory (RAM). This allows us to send the file directly to Cloudinary without saving it first on our computer or server disk. It makes the upload process simpler because we don't need to manage temporary files. In this project, memoryStorage is suitable because Cloudinary handles storing the uploaded images.
 

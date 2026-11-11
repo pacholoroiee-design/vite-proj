@@ -5,10 +5,70 @@ const router = express.Router();
 const Student = require('../models/Student.cjs');
 const requireAuth = require('../middleware/auth.cjs');
 
-// GET ALL STUDENTS
+// GET STUDENT STATISTICS (AGGREGATION)
+router.get('/stats', requireAuth, async (req, res) => {
+    try {
+        const stats = await Student.aggregate([
+            {
+                $match: {
+                    isActive: { $in: [true, false] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalStudents: { $sum: 1 },
+                    activeStudents: {
+                        $sum: {
+                            $cond: ['$isActive', 1, 0]
+                        }
+                    },
+                    inactiveStudents: {
+                        $sum: {
+                            $cond: ['$isActive', 0, 1]
+                        }
+                    },
+                    averageAge: { $avg: '$age' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalStudents: 1,
+                    activeStudents: 1,
+                    inactiveStudents: 1,
+                    averageAge: {
+                        $round: ['$averageAge', 2]
+                    }
+                }
+            }
+        ]);
+
+        res.status(200).json(
+            stats[0] || {
+                totalStudents: 0,
+                activeStudents: 0,
+                inactiveStudents: 0,
+                averageAge: null
+            }
+        );
+
+    } catch (err) {
+        console.error('Statistics error:', err);
+
+        res.status(500).json({
+            error: 'Failed to retrieve statistics.'
+        });
+    }
+});
+
+
+// GET ALL STUDENTS WITH POPULATE
 router.get('/', requireAuth, async (req, res) => {
     try {
-        const students = await Student.find().sort({ name: 1 });
+        const students = await Student.find()
+            .populate('createdBy', 'name email')
+            .sort({ name: 1 });
 
         res.status(200).json(students);
 
@@ -21,7 +81,8 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-// ADD NEW STUDENT
+
+// ADD STUDENT
 router.post('/', requireAuth, async (req, res) => {
     try {
         const { name, email, age, isActive } = req.body;
@@ -44,12 +105,16 @@ router.post('/', requireAuth, async (req, res) => {
             name,
             email,
             age,
-            isActive: isActive ?? true
+            isActive: isActive ?? true,
+            createdBy: req.user.userId
         });
+
+        const populatedStudent = await Student.findById(newStudent._id)
+            .populate('createdBy', 'name email');
 
         res.status(201).json({
             message: 'Student added successfully.',
-            student: newStudent
+            student: populatedStudent
         });
 
     } catch (err) {
@@ -60,6 +125,7 @@ router.post('/', requireAuth, async (req, res) => {
         });
     }
 });
+
 
 // UPDATE STUDENT
 router.put('/:id', requireAuth, async (req, res) => {
@@ -95,6 +161,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
 });
 
+
 // DELETE STUDENT
 router.delete('/:id', requireAuth, async (req, res) => {
     try {
@@ -123,4 +190,3 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
-    

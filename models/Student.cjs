@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
@@ -11,7 +12,14 @@ const studentSchema = new mongoose.Schema({
         unique: true
     },
     age: Number,
-    isActive: Boolean
-});
+    isActive: Boolean,
+
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('Student', studentSchema);
